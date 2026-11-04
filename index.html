@@ -86,6 +86,12 @@ mark.cur{outline:2px solid var(--accent)}
 #pill small{font-weight:400;font-size:13px;opacity:.85;margin-left:6px}
 #toast{position:fixed;left:50%;bottom:calc(130px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(30,34,33,.92);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:80;max-width:88vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.show{opacity:1}
+a.ref.ext{text-decoration-style:dashed}
+#backFab{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:130px;z-index:26;display:flex;align-items:center;gap:6px;height:44px;padding:0 14px 0 12px;border:0;border-radius:22px;background:var(--accent);color:var(--on-accent);font-size:14.5px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:calc(100% - 28px)}
+#backFab svg{width:20px;height:20px;flex:none}
+#backFab .bf-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#backFab .bf-n{min-width:20px;height:20px;border-radius:10px;background:var(--on-accent);color:var(--accent);font-size:12px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+#backFab:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
 #ttsBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(122px + env(safe-area-inset-bottom));z-index:25;width:min(520px,calc(100% - 20px));background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 22px rgba(0,0,0,.2);padding:8px 12px 6px}
 #ttsBar .tb-top{display:flex;align-items:baseline;gap:8px;font-size:14px;line-height:1.3}
 #ttsBar .tb-now{flex:1;min-width:0;color:var(--accent);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -295,6 +301,12 @@ mark.cur{outline:2px solid var(--accent)}
 .ntm{display:inline-flex;color:var(--accent);opacity:.75;flex:none}
 .ntm svg{width:13px;height:13px}
 .mmta{font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:15px}
+.pcc{display:inline-flex;align-items:center;border:1px solid var(--rev);background:none;color:var(--muted);border-radius:10px;font-size:.66em;font-weight:600;padding:.05em .55em;margin-left:.35em;vertical-align:.12em;line-height:1.5;cursor:pointer;white-space:nowrap}
+.pcc.old{border-style:dashed}
+.doc.prec .psec{border-top:1px solid var(--line);padding:.4em 0}
+.doc.prec .psec summary{color:var(--accent);font-weight:700;cursor:pointer;padding:.3em 0}
+.doc.prec .ptx{white-space:pre-wrap;font-size:.95em}
+.doc.prec .law-info a{color:var(--accent)}
 .xrc{display:inline-flex;align-items:center;border:1px solid var(--accent);background:none;color:var(--accent);border-radius:10px;font-size:.66em;font-weight:600;padding:.05em .55em;margin-left:.35em;vertical-align:.12em;line-height:1.5;cursor:pointer;white-space:nowrap}
 .xrc[aria-expanded="true"]{background:var(--accent);color:var(--on-accent)}
 .xrc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
@@ -459,7 +471,7 @@ const IC = {
 };
 /* ================= 설정 ================= */
 const DEF = { font: 'system', size: 100, lh: 180, ls: 0, theme: 'auto',
-  showRev: true, showAddenda: false, titleBlock: false, useAbbr: true, refLinks: true, xref: true, ttsRate: 1, ttsSkipRev: true };
+  showRev: true, showAddenda: false, titleBlock: false, useAbbr: true, refLinks: true, xref: true, prec: true, precSup: false, ttsRate: 1, ttsSkipRev: true };
 let S = Object.assign({}, DEF, LS.get('settings', {}));
 const FONTS = {
   system: { name: '시스템 기본', css: 'system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif' },
@@ -997,9 +1009,10 @@ const HELP = (() => {
   A('조문 즐겨찾기', ['hang', '① 본문의 조문 제목 옆에 흐리게 보이는 ☆를 누르면 그 조문이 즐겨찾기(★)가 된다. 다시 누르면 해제된다. 왼쪽 메뉴의 목차와 목차 화면에서도 같은 ☆로 추가·해제할 수 있다.'], ['hang', '② 목차의 "★" 단추를 누르면 즐겨찾기한 조문만 걸러 보며, 그 조문이 속한 편·장·절 제목도 함께 보인다.'], ['hang', '③ 조문 읽기 화면에서 "즐겨찾기만"을 누르면 즐겨찾기한 조문만 보이고 모두 선택되어, 재생하면 그 조문들만 차례로 읽는다.'], ['hang', '④ 태블릿·PC에서는 b 키로 지금 보는 조문을 즐겨찾기에 넣거나 뺀다.']);
   A('메모와 형광펜', ['hang', '① 조문 제목 옆에 흐리게 보이는 연필 단추를 누르면 그 조문에 메모를 남긴다. 메모는 조문 아래에 보이며, 누르면 고치거나 지울 수 있다.'], ['hang', '② 본문의 글자를 길게 누르거나 끌어서 고르면 위에 색 단추(노랑·초록·분홍)가 떠서, 누르면 그 부분에 형광펜이 칠해진다. 칠한 부분을 누르면 색을 바꾸거나 지운다.'], ['hang', '③ 메모나 형광펜이 있는 조문은 목차에 연필 표시가 붙고, 목차의 연필 단추로 그 조문만 걸러 본다.'], ['hang', '④ 메모와 형광펜은 데이터 저장 코드에 함께 담긴다.']);
   A('법률과 시행령 연결', ['hang', '① 같은 법령의 법률·시행령·시행규칙을 함께 받아 두면, 하위 법령에서 "법 제N조" 또는 "영 제N조"로 인용한 조문을 찾아 위 법령 조문 제목 옆에 "시행령 2"처럼 표시한다.'], ['hang', '② 표시를 누르면 관련 조문이 그 아래에 펼쳐지고, "이 조문으로 가기"를 누르면 그 법령의 그 조문으로 간다.'], ['hang', '③ 시행령·시행규칙을 볼 때에는 그 조문이 인용한 법률·시행령 조문을 같은 방식으로 보여 준다.'], ['hang', '④ 법률만 받아 둔 경우에는 법령 정보 아래의 안내 단추로 같은 폴더의 시행령·시행규칙을 받을 수 있다. 화면 설정에서 끌 수 있다.']);
-  A('참조 조문', '본문 중 같은 법령의 다른 조문을 가리키는 표시(예: 제10조)를 누르면 그 조문으로 이동한다. 다만, 「」로 인용한 다른 법령의 조문은 연결하지 아니한다.');
+  A('참조 조문', ['hang', '① 본문 중 다른 조문을 가리키는 표시(예: 제10조)를 누르면 그 조문으로 이동한다.'], ['hang', '② 「민사소송법」 제153조처럼 다른 법령을 인용한 조문은 그 법령의 조문으로 이동하며, 점선 밑줄로 구분한다. "같은 법 제N조"는 바로 앞에 인용한 법령으로, 시행령·시행규칙의 "법 제N조"·"영 제N조"는 같은 법령의 법률·시행령으로 이동한다.'], ['hang', '③ 인용한 법령이 이 기기에 없으면 GitHub에서 받을지 묻고, 받기를 고르면 받은 뒤 그 조문으로 이동한다.'], ['hang', '④ 인용 조문으로 이동하면 오른쪽 아래에 되돌아가기 단추가 떠서, 누르면 이동하기 전 위치로 돌아간다. 여러 번 이동했으면 이동한 횟수만큼 차례로 되돌아가며, 모두 돌아오면 단추가 사라진다.']);
   H('제4장 조문 읽기와 공유', '장');
   A('조문 읽기', ['hang', '① 스피커 버튼을 누르면 조문 읽기 화면이 열린다.'], ['hang', '② 장 이름 옆 ˅를 눌러 펼친 뒤 조문별로 체크하거나, 입력란에 1, 3, 4, 43-2 또는 10~15처럼 조문번호를 적어 읽을 조문을 고른다. 체크와 입력란은 서로 바로 맞춰진다.'], ['hang', '③ 재생 버튼을 누르면 적은 순서와 관계없이 조문 순서대로 읽어 준다. 읽는 조문은 본문에서 강조된다.'], ['hang', '④ 읽는 중에는 아래쪽에 재생 막대가 떠서 지금 조문, 읽은 시간과 전체 예상 시간을 보여 준다. 일시정지·이어 읽기, 다음 조문, 정지 단추가 있고, 막대를 누르면 그 위치의 조문으로 간다.'], ['hang', '⑤ 이전 단추를 한 번 누르면 지금 조문을 처음부터 다시 읽고, 한 번 더 누르면 이전 조문으로 간다.'], ['hang', '⑥ 전체 시간은 글자 수로 추정한 값이며, 읽을수록 실제 속도에 맞게 보정된다.'], ['hang', '⑦ 읽기 속도와 개정 표시 생략 여부를 정할 수 있다.']);
+  A('조문별 판례', ['hang', '① 조문 제목 옆의 "판례 N"은 그 조문을 참조조문으로 든 판례의 수이다. 누르면 판례 목록이 최근 선고 순으로 열린다.'], ['hang', '② 목록에서 판례를 누르면 판시사항, 판결요지, 참조조문, 참조판례와 판례 전문을 보여 준다. 한 번 본 판례는 이 기기에 저장되어 인터넷 없이 다시 볼 수 있다.'], ['hang', '③ 개정 전 법률을 참조한 판례는 판례에 "현행 제N조 참조"가 적혀 있으면 지금 조문에 붙이고, 그렇지 아니하면 "구법" 목록에 따로 둔다. 구법 목록의 판례는 지금 조문과 내용이 다를 수 있다.'], ['hang', '④ 목록 위의 "대법원" 단추나 화면 설정의 "판례는 대법원만"으로 하급심 판례를 뺄 수 있다.'], ['hang', '⑤ 판례는 국가법령정보센터 공개 판례를 정리한 legalize-kr/precedent-kr 저장소의 자료이며, 색인을 만든 날 이후의 판례는 다음 색인 갱신 때 반영된다.']);
   A('공유', '공유 버튼을 누르면 지금 화면 맨 위의 조문을 다른 앱으로 보내거나 복사한다.');
   H('제5장 설정', '장');
   A('탭 설정 화면', '"탭 설정 화면"에서 탭 이름에 약칭을 쓸지를 정할 수 있다.');
@@ -1443,12 +1456,14 @@ function refreshArt(k) {
   const i = cur.keyIdx.get(k); if (i === undefined) return;
   const old = cur.els[i]; if (!old) return;
   AF.render = new Set(afList(cur.law.id)); NT.render = true;
+  REFCTX = cur.law;
   const tmp = document.createElement('div'); tmp.innerHTML = artHtml(cur.list[i]);
   AF.render = null; NT.render = null;
   const sec = tmp.firstElementChild;
   old.replaceWith(sec); cur.els[i] = sec; cur.tops = null;
   applyHl(sec, k);
   XR.decorate(sec);
+  PREC.decorate(sec);
 }
 /* 메모 쓰기 */
 function openMemo(k) {
@@ -1634,6 +1649,122 @@ const XR = (() => {
   return { attach, decorate, click, clear: () => cache.clear() };
 })();
 
+/* ================= 조문별 판례 ================= */
+// 색인: 앱과 같은 위치의 prec/ (tools/build_prec_index.py 로 만든다)
+// 판례 본문: legalize-kr/precedent-kr 저장소에서 받아 이 기기에 저장
+const PREC = (() => {
+  const RAW = 'https://raw.githubusercontent.com/legalize-kr/precedent-kr/main/';
+  let index = null, indexP = null;
+  const files = new Map();          // 파일명 → Promise(json)
+  let ent = null, table = null, lawId = null;   // 지금 법령의 색인
+  const loadIndex = () => indexP || (indexP = fetch('prec/index.json', { cache: 'no-cache' })
+    .then((r) => (r.ok ? r.json() : null)).catch(() => null).then((j) => (index = j)));
+  const loadFile = (f) => {
+    if (!files.has(f)) files.set(f, fetch(`prec/${f}.json`).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).catch((e) => { files.delete(f); throw e; }));
+    return files.get(f);
+  };
+  const sup = (pi) => !S.precSup || table[pi][5] === 0;
+  const listOf = (k) => ({ a: ((ent && ent.a && ent.a[k]) || []).filter(sup), o: ((ent && ent.o && ent.o[k]) || []).filter(sup) });
+  function chip(k) {
+    if (!ent || !S.prec) return '';
+    const { a, o } = listOf(String(k).replace(/_\d+$/, ''));
+    const n = a.length + o.length;
+    return n ? `<button type="button" class="pcc nox${a.length ? '' : ' old'}" data-pc="${esc(k)}" title="이 조문을 참조한 판례 ${n}건">판례 ${n}</button>` : '';
+  }
+  function decorate(sec) {
+    const h = chip(sec.dataset.k); if (!h) return;
+    const at = $('.at', sec); if (at) at.insertAdjacentHTML('beforeend', h);
+  }
+  async function attach(L) {
+    ent = null; table = null; lawId = L.id;
+    $$('.pcc', C).forEach((x) => x.remove());
+    if (!S.prec || L.id === HELP.id) return;
+    const ix = await loadIndex();
+    const hit = ix && ix.laws[normName(L.name)];
+    if (!hit || cur.law !== L) return;
+    let j; try { j = await loadFile(hit[0]); } catch (e) { return; }
+    if (cur.law !== L) return;
+    ent = j[normName(L.name)] || null; table = j._p;
+    if (ent) for (const sec of cur.els) decorate(sec);
+  }
+  const pathOf = (p) => {
+    const [no, d, court, , ci, lvl, fn] = p;
+    const ymd = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+    return `${index.cats[ci]}/${lvl ? '하급심' : '대법원'}/${fn || `${court}_${ymd}_${no}.md`}`;
+  };
+  const dateOf = (d) => (d && d.length === 8 ? `${d.slice(0, 4)}. ${+d.slice(4, 6)}. ${+d.slice(6, 8)}.` : d || '');
+  const row = (pi) => { const p = table[pi]; return `<div class="ritem prow" data-pi="${pi}"><div class="nm">${esc(p[3] || p[0])}<span class="sub">${esc(p[2])} ${esc(dateOf(p[1]))} 선고 ${esc(p[0])}${p[5] ? ' · 하급심' : ''}</span></div></div>`; };
+  function openList(k) {
+    if (!ent || !cur.law) return;
+    const u = cur.list[cur.keyIdx.get(k)];
+    const lawName = cur.law.name, key = String(k).replace(/_\d+$/, '');
+    const { el, body } = panel(`판례 · ${u ? label(u) : keyLabel(key)}`);
+    const draw = () => {
+      const { a, o } = listOf(key);
+      const LIM = 300;
+      const sec = (title, arr, note) => arr.length ? `<div class="sec">${title} · ${arr.length}건</div>${note ? `<div class="note">${note}</div>` : ''}<div class="rlist">${arr.slice(0, LIM).map(row).join('')}</div>${arr.length > LIM ? `<div class="note">최근 ${LIM}건만 보여요.</div>` : ''}` : '';
+      body.innerHTML = `<div class="meta"><span>참조조문에 ${esc(lawName)} ${esc(keyLabel(key))}이 나오는 판례</span><span class="sp"></span><div class="seg" id="pcSup"><button type="button" data-v="0" class="${S.precSup ? '' : 'on'}">전체</button><button type="button" data-v="1" class="${S.precSup ? 'on' : ''}">대법원</button></div></div>
+        ${sec('현행 조문', a, '')}
+        ${sec(`구법 ${esc(keyLabel(key))}`, o, '개정 전 법률의 같은 번호 조문을 참조한 판례예요. 지금 조문과 내용이 다를 수 있어요.')}
+        ${a.length + o.length ? '' : '<div class="note">이 조건에 맞는 판례가 없어요.</div>'}
+        <div class="note">판례: 국가법령정보센터 공개 판례(legalize-kr/precedent-kr) · 색인 ${esc((index && index.built || '').slice(0, 10))} 기준</div>`;
+    };
+    draw();
+    body.addEventListener('click', (e) => {
+      const sb = e.target.closest('#pcSup button');
+      if (sb) { S.precSup = sb.dataset.v === '1'; LS.set('settings', S); draw(); $$('.pcc', C).forEach((x) => x.remove()); for (const s2 of cur.els) decorate(s2); return; }
+      const r = e.target.closest('.prow'); if (r) openPrec(+r.dataset.pi);
+    });
+  }
+  function mdSections(md) {
+    md = md.replace(/\r/g, '');
+    const fm = {}; const m = md.match(/^---\n([\s\S]*?)\n---\n/);
+    if (m) { for (const line of m[1].split('\n')) { const kv = line.match(/^([^\s:][^:]*):\s*(.*)$/); if (kv) fm[kv[1].trim()] = kv[2].trim().replace(/^['"]|['"]$/g, ''); } md = md.slice(m[0].length); }
+    const secs = []; let curS = null, title = '';
+    for (const line of md.split('\n')) {
+      const h1 = line.match(/^#\s+(.*)$/), h2 = line.match(/^##\s+(.*)$/);
+      if (h1 && !title) { title = h1[1].trim(); continue; }
+      if (h2) { curS = { h: h2[1].trim(), x: [] }; secs.push(curS); continue; }
+      if (curS) curS.x.push(line);
+    }
+    secs.forEach((x) => { x.x = x.x.join('\n').replace(/^\n+|\n+$/g, ''); });
+    return { fm, title, secs: secs.filter((x) => x.x) };
+  }
+  async function openPrec(pi) {
+    const p = table[pi]; if (!p) return;
+    const path = pathOf(p);
+    const { el, body } = panel(p[0]);
+    body.innerHTML = '<div class="loading">판례를 불러오는 중…</div>';
+    let md = await DB.get('prec:' + path);
+    if (!md) {
+      try {
+        const r = await fetch(RAW + encPath(path), { cache: 'no-store' });
+        if (!r.ok) throw new Error(r.status === 404 ? '저장소에서 이 판례 파일을 찾지 못했어요.' : `판례를 받지 못했어요 (${r.status})`);
+        md = await r.text();
+        DB.set('prec:' + path, md);
+      } catch (e) {
+        if (!el.isConnected) return;
+        body.innerHTML = `<div class="err"><div class="msg">${esc(e.message && !/fetch/i.test(e.message) ? e.message : '판례 저장소(GitHub)에 연결할 수 없어요. 인터넷 연결을 확인하세요.')}</div></div>`;
+        return;
+      }
+    }
+    if (!el.isConnected) return;
+    const d = mdSections(md);
+    const src = d.fm['출처'] && /^https:\/\/www\.law\.go\.kr\//.test(d.fm['출처']) ? d.fm['출처'] : '';
+    const open = (h) => /판시사항|판결요지|참조조문|참조판례/.test(h);
+    body.innerHTML = `<div class="doc prec">
+      <div class="law-title">${esc(d.title || p[3])}</div>
+      <div class="law-info">${esc(d.fm['법원명'] || p[2])} ${esc(dateOf((d.fm['선고일자'] || '').replace(/-/g, '') || p[1]))} 선고 ${esc(d.fm['사건번호'] || p[0])}${src ? `<br><a href="${esc(src)}" target="_blank" rel="noopener">국가법령정보센터에서 보기</a>` : ''}</div>
+      ${d.secs.map((x) => `<details class="psec"${open(x.h) ? ' open' : ''}><summary>${esc(x.h)}</summary><div class="ptx">${esc(x.x)}</div></details>`).join('')}
+    </div>`;
+  }
+  function click(e) {
+    const c = e.target.closest('.pcc'); if (!c) return false;
+    openList(c.dataset.pc); return true;
+  }
+  return { attach, decorate, click, reset: () => { files.clear(); indexP = null; index = null; } };
+})();
+
 /* ================= 본문 렌더링 ================= */
 const C = $('#content');
 let cur = { law: null, list: [], keyIdx: new Map(), els: [], tops: null };
@@ -1642,15 +1773,38 @@ const REV1 = /&lt;(?:개정|신설|삭제|타법개정|제목개정|전문개정
 const REV2 = /\[(?:본조신설|전문개정|제목개정|본조제목개정|종전|시행일|헌법불합치|단순위헌|한정위헌|위헌|한정합헌|본조\s*개정|이동)[^\]]*\]/g;
 function fmt(t, links = true) {
   let s = esc(t).replace(REV1, (m) => `<span class="rev">${m}</span>`).replace(REV2, (m) => `<span class="rev">${m}</span>`);
-  if (links && S.refLinks) {
-    s = s.replace(/제(\d+)조(?:의(\d+))?/g, (m, a, b, off, str) => {
-      const pre = str.slice(Math.max(0, off - 14), off).replace(/\s+$/, '');
-      if (/」$/.test(pre) || /같은\s*(법|영|규칙)$/.test(pre)) return m;
-      if (/(법|영|규칙)$/.test(pre) && !/이\s*(법|영|규칙)$/.test(pre)) return m;
-      return `<a class="ref" data-k="${b ? a + '-' + b : a}">${m}</a>`;
-    });
-  }
+  if (links && S.refLinks) s = linkRefs(s);
   return s.replace(/\n/g, '<br>');
+}
+/* ---- 조문 인용 연결 ----
+ * 「민사소송법」 제153조ㆍ제154조 → 민사소송법의 조문, 같은 법 제N조 → 바로 앞에 나온 법,
+ * 법 제N조/영 제N조(시행령·시행규칙에서) → 같은 법령의 법률/시행령, 그 밖에는 지금 법령의 조문으로 연결한다.
+ * 「」 바로 뒤의 첫 조문부터 연결하고, 조문 사이가 ㆍ·및·부터 같은 잇는 말뿐이면 같은 법령으로 본다. */
+let REFCTX = null;
+const normName = (n) => String(n || '').replace(/\s+/g, '').replace(/[·・‧∙]/g, 'ㆍ');
+const REF_RE = /「([^」<>]{1,80})」|(이|같은)\s?(법|영|규칙)(?=\s*제\s*\d)|(?<![가-힣A-Za-z0-9」])(법|영|규칙)(?=\s+제\s*\d)|([가-힣ㆍ]{1,40}(?:법률|법|시행령|시행규칙))(?=\s+제\s*\d+\s*조)|제(\d+)조(?:의(\d+))?/g;
+const REF_GAP = /^(?:\s|ㆍ|·|,|및|또는|와|과|부터|까지|의|중|같은\s*조|각\s*호|각\s*목|외의|부분|본문|단서|전단|후단|제\d+항|제\d+호(?:의\d+)?|[가-하]목|<span class="rev">[^<]*<\/span>)*$/;
+const ROLE_OF = { '법': '법률', '영': '시행령', '규칙': '시행규칙' };
+function linkRefs(s) {
+  const L = REFCTX || cur.law;
+  const self = L ? normName(L.name) : '';
+  let tgt = null, named = null, lastEnd = -1;
+  return s.replace(REF_RE, (m, br, thisW, thisK, roleW, bare, n, sub, off) => {
+    const end = off + m.length;
+    if (br !== undefined) { const x = normName(br); tgt = x === self ? null : { name: br.trim() }; if (tgt) named = tgt; lastEnd = end; return m; }
+    if (thisW !== undefined) { tgt = thisW === '같은' ? named : null; lastEnd = end; return m; }
+    if (roleW !== undefined) { tgt = { role: ROLE_OF[roleW] }; lastEnd = end; return m; }
+    if (bare !== undefined) {
+      if (/^(이|같은|그|해당|관계|다른)/.test(bare)) return m;
+      const x = normName(bare); tgt = x === self ? null : { name: bare }; if (tgt) named = tgt; lastEnd = end; return m;
+    }
+    const gap = lastEnd < 0 ? 'x' : s.slice(lastEnd, off);
+    if (gap.length > 60 || !REF_GAP.test(gap)) tgt = null;
+    lastEnd = end;
+    const k = sub ? `${+n}-${+sub}` : `${+n}`;
+    const attr = tgt ? (tgt.name ? ` data-law="${esc(tgt.name)}"` : ` data-role="${tgt.role}"`) : '';
+    return `<a class="ref${tgt ? ' ext' : ''}" data-k="${k}"${attr}>${m}</a>`;
+  });
 }
 function artHtml(u) {
   const ln = u.ln || [];
@@ -1663,6 +1817,7 @@ function artHtml(u) {
   return h + (NT.render ? memoBox(u.k) : '') + '</section>';
 }
 function renderLaw(L) {
+  REFCTX = L;
   const h = [`<div class="doc"><div class="law-title">${esc(L.name)}</div>`];
   h.push(`<div class="law-info">${esc(infoLine(L))}${isFuture(L) ? `<br><b class="soon">${esc(fdate(L.ef))} 시행 예정 개정이 반영된 본문입니다</b>` : ''}</div>`);
   if (L.notice) h.push(`<div class="help-notice">기능 개발·추가 건의는 <a href="${FEEDBACK_URL}" target="_blank" rel="noopener">카카오톡 오픈채팅</a>으로 보내 주세요.<br><span class="hn-url">${FEEDBACK_URL.replace(/^https:\/\//, '')}</span></div>`);
@@ -1684,6 +1839,7 @@ function renderLaw(L) {
   for (const k of Object.keys(ntOf(L.id) || {})) { const j = cur.keyIdx.get(k); if (j !== undefined) applyHl(cur.els[j], k); }
   SELBAR.hide();
   XR.attach(L);
+  PREC.attach(L);
   SIDE.toc();
 }
 function tops() {
@@ -1721,11 +1877,9 @@ C.addEventListener('click', (e) => {
   const mb = e.target.closest('.mbn, .memo');
   if (mb) { openMemo(mb.dataset.mb || mb.dataset.mk); return; }
   if (XR.click(e)) return;
+  if (PREC.click(e)) return;
   const a = e.target.closest('a.ref');
-  if (a) {
-    if (!jumpKey(a.dataset.k)) toast('이 법령에 없는 조문이에요');
-    return;
-  }
+  if (a) { followRef(a); return; }
   const hl = e.target.closest('.uhl');
   if (hl && String(getSelection()).length === 0) { hlMenu(hl.closest('.art'), +hl.dataset.hi); return; }
   const b = e.target.closest('[data-act]');
@@ -1755,8 +1909,13 @@ async function showTab(i, opt = {}) {
     if (seq !== showSeq) return;
     if (L.name && L.name !== t.name) { t.name = L.name; saveTabs(); renderTabs(); }
     renderLaw(L);
-    const k = opt.key || pos[t.id];
-    if (!(k && jumpKey(k, !!opt.key))) C.scrollTop = 0;
+    const nv = NAVP && NAVP.id === t.id ? NAVP : null;
+    if (nv) NAVP = null;
+    const k = opt.key || (nv && nv.key) || pos[t.id];
+    if (!(k && jumpKey(k, !!opt.key || !!(nv && nv.flash)))) C.scrollTop = 0;
+    if (nv && nv.top != null) C.scrollTop = nv.top;
+    if (nv && nv.flash && nv.key && !cur.keyIdx.has(nv.key)) toast(`${L.name}에 ${keyLabel(nv.key)}가 없어요`, 3000);
+    BACK.ui();
     SIDE.track();
   } catch (e) {
     if (seq !== showSeq) return;
@@ -2084,6 +2243,103 @@ function openLaw(it) {
   active = ti; saveTabs();
   closeAll();
   setTimeout(() => showTab(ti), 20);
+}
+/* ================= 인용 조문 이동 · 되돌리기 ================= */
+let NAVP = null; // 다음에 열릴 법령에서 갈 위치 { id, key, top, flash }
+const keyLabel = (k) => { const m = String(k).match(/^(\d+)(?:-(\d+))?/); return m ? `제${m[1]}조${m[2] ? '의' + m[2] : ''}` : k; };
+const BACK = (() => {
+  const st = [];
+  const fab = document.createElement('button');
+  fab.type = 'button'; fab.id = 'backFab'; fab.hidden = true;
+  fab.setAttribute('aria-label', '인용하기 전 위치로 되돌아가기');
+  document.body.appendChild(fab);
+  function place() {
+    if (fab.hidden) return;
+    const kp = $('#keypad'), tb = $('#ttsBar');
+    let bottom = kp ? innerHeight - kp.getBoundingClientRect().top + 12 : 16;
+    if (tb && !tb.hidden) bottom = Math.max(bottom, innerHeight - tb.getBoundingClientRect().top + 10);
+    fab.style.bottom = bottom + 'px';
+  }
+  function ui() {
+    const top = st[st.length - 1];
+    fab.hidden = !top;
+    if (!top) return;
+    const here = cur.law && cur.law.id === top.id;
+    fab.innerHTML = `${IC.back}<span class="bf-t">${here ? '' : esc(top.short) + ' '}${esc(keyLabel(top.k || ''))}</span>${st.length > 1 ? `<b class="bf-n">${st.length}</b>` : ''}`;
+    fab.title = `${top.name} ${keyLabel(top.k || '')}(으)로 되돌아가기`;
+    place();
+  }
+  function push() {
+    if (!cur.law) return;
+    st.push({ id: cur.law.id, name: cur.law.name, short: cur.law.name.length > 8 ? cur.law.name.slice(0, 7) + '…' : cur.law.name, k: curKey(), top: C.scrollTop });
+    if (st.length > 30) st.shift();
+    ui();
+  }
+  function pop() {
+    const b = st.pop(); ui();
+    if (!b) return;
+    if (cur.law && cur.law.id === b.id) { C.scrollTop = b.top; return; }
+    NAVP = { id: b.id, key: b.k, top: b.top };
+    openLaw({ id: b.id, n: b.name });
+  }
+  fab.addEventListener('click', pop);
+  addEventListener('resize', place);
+  return { push, pop, ui, place, size: () => st.length, undo: () => { st.pop(); ui(); } };
+})();
+// 인용한 법령 찾기: 이름 또는 (같은 폴더의) 법률·시행령·시행규칙
+function findLawByName(name) {
+  const x = normName(name);
+  const hit = LIST.find((it) => it.id !== HELP.id && normName(it.n) === x);
+  return hit ? { id: hit.id, name: hit.n } : null;
+}
+function refTarget(a) {
+  const L = cur.law; if (!L) return null;
+  if (a.dataset.law) {
+    const name = a.dataset.law;
+    const f = findLawByName(name);
+    if (f) return f;
+    const m = name.match(/^(.*?)\s*(시행령|시행규칙)$/);
+    const folder = ghFolderOf(m ? m[1] : name);
+    return { name, missing: true, paths: m ? [`${folder}/${m[2]}.md`] : [`${folder}/법률.md`, `${folder}/대통령령.md`] };
+  }
+  if (a.dataset.role) {
+    const role = a.dataset.role, u = USER[L.id];
+    if (!u) return { name: role, none: true };
+    const folder = u.src === 'gh' ? (u.path || '').split('/')[0] : u.folder;
+    const sib = Object.values(USER).find((x) => x.id !== L.id && (x.src === 'gh' ? x.path === `${folder}/${role}.md` : x.src === u.src && x.folder === folder && x.file === `${role}.md`));
+    if (sib) return { id: sib.id, name: sib.name };
+    const base = L.name.replace(/\s*(시행령|시행규칙)$/, '');
+    const nm = role === '법률' ? base : `${base} ${role}`;
+    const f = findLawByName(nm); if (f) return f;
+    if (u.src !== 'gh') return { name: nm, none: true };
+    return { name: nm, missing: true, paths: [`${folder}/${role}.md`] };
+  }
+  return { self: true };
+}
+async function downloadAny(paths) {
+  let err = null;
+  for (const p of paths) { try { return await ghDownload(p); } catch (e) { err = e; if (!e.notFound) break; } }
+  throw err;
+}
+function followRef(a) {
+  const k = a.dataset.k, t = refTarget(a);
+  if (!t) return;
+  if (t.self) {
+    if (!cur.keyIdx.has(k)) return toast(`이 법령에 ${keyLabel(k)}가 없어요`);
+    BACK.push(); jumpKey(k); BACK.ui();
+    return;
+  }
+  const go = (id, name) => { BACK.push(); NAVP = { id, key: k, flash: true }; openLaw({ id, n: name }); };
+  if (t.id) return go(t.id, t.name);
+  if (t.none) return toast(`"${t.name}"이(가) 이 기기에 없어요. 같은 폴더에 넣거나 GitHub에서 받아 주세요.`, 3500);
+  sheet(`"${t.name}"이(가) 이 기기에 없어요. GitHub(legalize-kr)에서 받아 ${keyLabel(k)}로 갈까요?`, [
+    { label: '받고 이동하기', fn: async () => {
+      toast(`${t.name} 받는 중…`, 8000);
+      try { const L = await downloadAny(t.paths); toast(`${L.name}을(를) 받았어요`, 1800); go(L.id, L.name); }
+      catch (e) { toast(e.notFound ? `저장소에서 "${t.name}"을(를) 찾지 못했어요` : e.message, 4000); }
+    } },
+    { label: '취소', fn: () => {} },
+  ]);
 }
 /* ================= 목차 ================= */
 const LVR = { '편': 1, '장': 2, '절': 3, '관': 4 };
@@ -2480,6 +2736,7 @@ function ttsNext() {
   else toast('마지막 조문이에요');
 }
 function ttsUI() {
+  setTimeout(() => BACK.place(), 0);
   if (!TTS.on) return;
   let tot = 0, done = 0;
   for (let j = 0; j < TTS.q.length; j++) { const e = estOf(TTS.q[j]); tot += e; if (j < TTS.i) done += e; }
@@ -2612,7 +2869,9 @@ function openView() {
     ${tog('showAddenda', '부칙 보이기', '법령 끝에 부칙을 붙여 보여줍니다')}
     ${tog('titleBlock', '조문 제목 줄바꿈', '제1조(목적)을 따로 한 줄에 표시')}
     ${tog('refLinks', '참조 조문 연결', '본문의 "제10조" 등을 눌러 이동')}
-    ${tog('xref', '법률·시행령 연결 보기', '같은 법령의 법률·시행령·시행규칙을 받아 두면 조문끼리 연결해 보여줍니다')}`;
+    ${tog('xref', '법률·시행령 연결 보기', '같은 법령의 법률·시행령·시행규칙을 받아 두면 조문끼리 연결해 보여줍니다')}
+    ${tog('prec', '조문별 판례 보기', '조문 제목 옆에 그 조문을 참조한 판례 수를 보여줍니다')}
+    ${tog('precSup', '판례는 대법원만', '하급심(특허법원·고등법원 등) 판례를 빼고 셉니다')}`;
   $('#th', el).onclick = (e) => {
     const b = e.target.closest('button'); if (!b) return;
     S.theme = b.dataset.t; saveS(false);
@@ -2621,7 +2880,7 @@ function openView() {
   el.addEventListener('change', (e) => {
     const k = e.target.dataset.s; if (!k) return;
     S[k] = e.target.checked; saveS();
-    if ((k === 'showAddenda' || k === 'refLinks' || k === 'xref') && cur.law) { const ck = curKey(); renderLaw(cur.law); if (ck) jumpKey(ck, false); }
+    if ((k === 'showAddenda' || k === 'refLinks' || k === 'xref' || k === 'prec' || k === 'precSup') && cur.law) { const ck = curKey(); renderLaw(cur.law); if (ck) jumpKey(ck, false); }
   });
 }
 async function openData() {
