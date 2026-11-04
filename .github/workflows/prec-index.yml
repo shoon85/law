@@ -1,0 +1,193 @@
+# 판례 색인 갱신: legalize-kr/precedent-kr 최신 판례로 prec/ 색인을 다시 만든다.
+# 매월 2일 새벽(한국 03:00) 자동 실행, Actions 탭 Run workflow로 바로 실행도 가능.
+name: 판례 색인 갱신
+on:
+  schedule:
+    - cron: '0 18 1 * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: 판례 저장소 받기
+        run: git clone --depth 1 https://github.com/legalize-kr/precedent-kr "$RUNNER_TEMP/precedent-kr"
+      - name: 색인 만들기
+        run: |
+          cat > "$RUNNER_TEMP/build.py" <<'PYEOF'
+          """편한 법전 — 조문별 판례 색인 (prec/)"""
+          import json, os, re, subprocess, sys, zlib
+          from collections import defaultdict
+          from datetime import datetime, timezone
+
+          SRC = sys.argv[1] if len(sys.argv) > 1 else 'precedent-kr'
+          OUT = sys.argv[2] if len(sys.argv) > 2 else 'prec'
+          OWN_FILES = 60      # 판례가 많은 법령은 파일 하나씩
+          SHARDS = 32         # 나머지 법령은 이름 해시로 묶음 (웹 업로드 한 번에 100개 이하)
+
+          # 이름이 바뀐 법 (옛 이름 → 지금 이름). 옛 이름 판례는 '구법'으로 본다.
+          RENAMED = {'의장법': '디자인보호법'}
+
+          NAME = r'[가-힣][가-힣ㆍ·\s]*?(?:법률|법|시행령|시행규칙|규칙)'
+          TOK = re.compile(
+              r'(?P<sep>\[\d+\]|/|;)'
+              r'|(?P<buchik>부\s*칙(?:\s*\([^()]*\))?)'
+              r'|(?P<same>(?:같은\s*법|동\s*법)(?P<same_sub>\s*(?:시행령|시행규칙))?)(?=\s*(?:\([^()]*\))?\s*제\s*\d+\s*조)'
+              r'|(?P<hyun>\(\s*현행\s*(?P<hyun_name>' + NAME + r')?\s*제\s*(?P<hn>\d+)\s*조(?:\s*의\s*(?P<hs>\d+))?[^()]*\))'
+              r'|(?P<old>구\s*)?(?P<name>' + NAME + r')(?:\s*\([^()]*\))?(?=\s*제\s*\d+\s*조)'
+              r'|제\s*(?P<n>\d+)\s*조(?:\s*의\s*(?P<s>\d+))?'
+          )
+          BAD_NAME = re.compile(r'^(법률|법|이법|본법|동법|같은법|규칙|시행령|시행규칙)$')
+
+          def norm(n):
+              return re.sub(r'\s+', '', n).replace('·', 'ㆍ')
+
+          def key(n, s):
+              return f'{int(n)}-{int(s)}' if s else str(int(n))
+
+          def front(text):
+              m = re.match(r'---\n(.*?)\n---\n', text, re.S)
+              out = {}
+              if m:
+                  for line in m.group(1).split('\n'):
+                      kv = re.match(r'^([^\s:][^:]*):\s*(.*)$', line)
+                      if kv:
+                          out[kv.group(1).strip()] = kv.group(2).strip().strip("'\"")
+              return out
+
+          def refs_of(text):
+              """참조조문 → [(법령명, 구법여부, 조문키)]"""
+              m = re.search(r'\n## 참조조문\n(.*?)(?:\n## |\Z)', text, re.S)
+              if not m:
+                  return []
+              out = []
+              cur = None          # (법령명, 구법여부)
+              for t in TOK.finditer(m.group(1)):
+                  g = t.groupdict()
+                  if g['sep'] or g['buchik']:
+                      cur = None
+                  elif g['same']:
+                      if cur:
+                          base = re.sub(r'(시행령|시행규칙)$', '', cur[0])
+                          cur = (base + norm(g['same_sub'] or ''), cur[1])
+                  elif g['hyun']:
+                      if cur and cur[1]:
+                          nm = norm(g['hyun_name']) if g['hyun_name'] else cur[0]
+                          nm = RENAMED.get(nm, nm)
+                          out.append((nm, False, key(g['hn'], g['hs'])))
+                  elif g['name']:
+                      nm = norm(g['name'])
+                      if BAD_NAME.match(nm) or len(nm) > 40:
+                          cur = None
+                          continue
+                      old = bool(g['old'])
+                      if nm in RENAMED:
+                          nm, old = RENAMED[nm], True
+                      cur = (nm, old)
+                  elif g['n'] and cur:
+                      out.append((cur[0], cur[1], key(g['n'], g['s'])))
+              return out
+
+          def main():
+              cats = sorted(d for d in os.listdir(SRC) if os.path.isdir(os.path.join(SRC, d)) and not d.startswith('.'))
+              precs = []                                   # 전체 판례 메타
+              idx = defaultdict(lambda: {'a': defaultdict(set), 'o': defaultdict(set)})
+              n_files = n_noref = 0
+              for ci, cat in enumerate(cats):
+                  for lvl_name in sorted(os.listdir(os.path.join(SRC, cat))):
+                      d = os.path.join(SRC, cat, lvl_name)
+                      if not os.path.isdir(d):
+                          continue
+                      lvl = 0 if lvl_name == '대법원' else 1
+                      for fn in sorted(os.listdir(d)):
+                          if not fn.endswith('.md'):
+                              continue
+                          n_files += 1
+                          with open(os.path.join(d, fn), encoding='utf-8') as f:
+                              text = f.read()
+                          refs = refs_of(text)
+                          if not refs:
+                              n_noref += 1
+                              continue
+                          fm = front(text)
+                          case_no = fm.get('사건번호', '')
+                          date = fm.get('선고일자', '').replace('-', '')
+                          court = fm.get('법원명', '')
+                          default = f"{court}_{fm.get('선고일자', '')}_{case_no}.md"
+                          pid = len(precs)
+                          precs.append([case_no, date, court, fm.get('사건명', '')[:60], ci, lvl, '' if fn == default else fn])
+                          for nm, old, k in refs:
+                              idx[nm]['o' if old else 'a'][k].add(pid)
+
+              # 법령별 판례 수 → 큰 법령은 단독 파일, 나머지는 해시 묶음
+              size = {nm: len({p for b in v.values() for s in b.values() for p in s}) for nm, v in idx.items()}
+              order = sorted(size, key=lambda nm: -size[nm])
+              file_of = {}
+              for i, nm in enumerate(order):
+                  file_of[nm] = f'l{i:03d}' if i < OWN_FILES else f's{zlib.crc32(nm.encode()) % SHARDS:02d}'
+
+              os.makedirs(OUT, exist_ok=True)
+              for f in os.listdir(OUT):
+                  if f.endswith('.json'):
+                      os.remove(os.path.join(OUT, f))
+              groups = defaultdict(list)
+              for nm, f in file_of.items():
+                  groups[f].append(nm)
+              total = 0
+              for f, names in sorted(groups.items()):
+                  local = {}
+                  table = []
+                  def lp(pid):
+                      if pid not in local:
+                          local[pid] = len(table)
+                          table.append(precs[pid])
+                      return local[pid]
+                  body = {}
+                  for nm in sorted(names):
+                      ent = {}
+                      for b in ('a', 'o'):
+                          arts = {}
+                          for k, ps in idx[nm][b].items():
+                              arts[k] = sorted((lp(p) for p in ps), key=lambda x: table[x][1], reverse=True)
+                          if arts:
+                              ent[b] = dict(sorted(arts.items(), key=lambda kv: [int(x) for x in kv[0].split('-')]))
+                      body[nm] = ent
+                  body = {'_p': table, **body}
+                  data = json.dumps(body, ensure_ascii=False, separators=(',', ':'))
+                  total += len(data.encode())
+                  with open(os.path.join(OUT, f + '.json'), 'w', encoding='utf-8') as fh:
+                      fh.write(data)
+
+              try:
+                  commit = subprocess.run(['git', '-C', SRC, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip()
+              except Exception:
+                  commit = ''
+              index = {
+                  'v': 1,
+                  'built': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+                  'src': 'legalize-kr/precedent-kr' + ('@' + commit if commit else ''),
+                  'cats': cats,
+                  'count': len(precs),
+                  'laws': {nm: [file_of[nm], size[nm]] for nm in order},
+              }
+              with open(os.path.join(OUT, 'index.json'), 'w', encoding='utf-8') as fh:
+                  json.dump(index, fh, ensure_ascii=False, separators=(',', ':'))
+              print(f'판례 {n_files}건 중 참조조문 있는 {len(precs)}건 · 법령 {len(idx)}개 · 파일 {len(groups) + 1}개 · {total / 1e6:.1f}MB')
+              for nm in order[:10]:
+                  print(f'  {nm}: 판례 {size[nm]}건 → {file_of[nm]}.json')
+
+          if __name__ == '__main__':
+              main()
+          PYEOF
+          python3 "$RUNNER_TEMP/build.py" "$RUNNER_TEMP/precedent-kr" prec
+      - name: 바뀐 색인 올리기
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add prec
+          if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
+          git commit -m "판례 색인 갱신 $(date -u +%Y-%m-%d)"
+          git push
