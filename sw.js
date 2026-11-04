@@ -3,7 +3,7 @@
  * - 법령 본문은 앱이 IndexedDB에 따로 저장하므로 여기서 다루지 않는다.
  * - GitHub 등 다른 주소로 가는 요청은 건드리지 않는다.
  * 앱을 고친 뒤 올릴 때는 VERSION을 바꾸면 다음 실행 때 새 화면으로 바뀐다. */
-const VERSION = 'lawbook-v9-5';
+const VERSION = 'lawbook-v9-6';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable.png'];
 
 self.addEventListener('install', (e) => {

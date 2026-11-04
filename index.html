@@ -1652,15 +1652,41 @@ const XR = (() => {
 /* ================= 조문별 판례 ================= */
 // 색인: 앱과 같은 위치의 prec/ (tools/build_prec_index.py 로 만든다)
 // 판례 본문: legalize-kr/precedent-kr 저장소에서 받아 이 기기에 저장
+const PREC_HOME = 'https://shoon85.github.io/law/prec/'; // 판례 색인을 올려 둔 공개 주소
 const PREC = (() => {
   const RAW = 'https://raw.githubusercontent.com/legalize-kr/precedent-kr/main/';
   let index = null, indexP = null;
   const files = new Map();          // 파일명 → Promise(json)
   let ent = null, table = null, lawId = null;   // 지금 법령의 색인
-  const loadIndex = () => indexP || (indexP = fetch('prec/index.json', { cache: 'no-cache' })
-    .then((r) => (r.ok ? r.json() : null)).catch(() => null).then((j) => (index = j)));
+  // 웹(GitHub Pages)에서는 같은 위치의 prec/, 파일로 연 데스크톱 버전은 공개 주소의 prec/ 를 쓴다.
+  // 받은 색인은 이 기기에 저장해 두어 인터넷이 없어도 쓴다.
+  const BASES = location.protocol === 'file:' ? [PREC_HOME] : ['prec/', PREC_HOME];
+  let base = null;
+  async function getJson(name, fresh) {
+    for (const b of base ? [base] : BASES) {
+      try {
+        const r = await fetch(b + name, { cache: fresh ? 'no-cache' : 'default' });
+        if (!r.ok) continue;
+        const j = await r.json(); base = b; return j;
+      } catch (e) {}
+    }
+    return null;
+  }
+  const loadIndex = () => indexP || (indexP = (async () => {
+    const saved = await DB.get('precix');
+    const j = await getJson('index.json', true);
+    if (j) { if (!saved || saved.built !== j.built) { DB.set('precix', j); for (const k of await DB.keys()) if (String(k).startsWith('precf:')) DB.del(k); } return (index = j); }
+    return (index = saved || null);
+  })());
   const loadFile = (f) => {
-    if (!files.has(f)) files.set(f, fetch(`prec/${f}.json`).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).catch((e) => { files.delete(f); throw e; }));
+    if (!files.has(f)) files.set(f, (async () => {
+      const saved = await DB.get('precf:' + f);
+      if (saved && saved._built === (index && index.built)) return saved;
+      const j = await getJson(f + '.json');
+      if (j) { j._built = index && index.built; DB.set('precf:' + f, j); return j; }
+      if (saved) return saved;
+      files.delete(f); throw new Error('색인 파일을 받지 못했어요');
+    })());
     return files.get(f);
   };
   const sup = (pi) => !S.precSup || table[pi][5] === 0;
