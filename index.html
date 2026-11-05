@@ -349,6 +349,17 @@ a.ref.ext{text-decoration-style:dashed}
 .slaw .pendrow .plus[data-pa="dl"]{color:var(--accent)}
 .slaw .pendrow .plus svg{width:17px;height:17px}
 </style>
+<!--VA-START 방문자 통계: Vercel 주소(*.vercel.app)에서만 작동. 데스크톱 파일에는 넣지 않는다. -->
+<script>
+(function () {
+  var VA_SCRIPT = '/_vercel/insights/script.js'; // Vercel › Analytics 화면에 안내된 스크립트 경로
+  if (location.protocol !== 'https:' || !/(^|\.)vercel\.app$/.test(location.hostname)) return;
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  var s = document.createElement('script'); s.defer = true; s.src = VA_SCRIPT;
+  document.head.appendChild(s);
+})();
+</script>
+<!--VA-END-->
 </head>
 <body>
 <div id="shell">
@@ -1024,6 +1035,7 @@ const HELP = (() => {
   A('법령 추가(GitHub)', ['hang', '① 법령 검색 화면에 법령명을 정확히 입력하고 "이름으로 바로 받기"를 누르면 legalize-kr 저장소의 그 법령 폴더를 연다.'], ['hang', '② 폴더 안에 파일이 여러 개(법률, 시행령, 시행규칙, 감사원규칙 등)이면 목록에서 받을 파일을 고른다. 파일이 하나뿐이면 바로 받는다.'], ['hang', '③ 정확한 법령명을 모르면 "법령 이름 찾아보기"를 눌러 국가법령정보센터에서 찾아본다. 띄어쓰기는 무시한다.'], ['hang', '④ 받은 법령은 인터넷 없이도 열린다.']);
   A('내 폴더 법령', ['hang', '① 이 파일과 같은 폴더에 법령명 폴더(예: 2028울산국제정원박람회지원및사후활용에관한특별법)를 만들고 그 안에 법률.md, 시행령.md 등을 넣으면 그 법령을 쓸 수 있다.'], ['hang', '② 웹 서버(http)로 열면 같은 위치의 laws.json(폴더 이름 목록) 또는 디렉터리 목록을 읽어 시작할 때마다 자동으로 불러온다.'], ['hang', '③ 파일을 직접 열면 브라우저 보안 때문에 옆 폴더를 바로 읽을 수 없으므로, 왼쪽 메뉴의 "내 폴더 연결"로 이 파일이 있는 폴더를 한 번 고른다. 크롬·엣지는 다음부터 자동으로 다시 읽고, 권한이 풀리면 "다시 읽기"를 누른다.']);
   A('데이터 저장·불러오기', ['hang', '① 메뉴 또는 왼쪽 메뉴 아래의 "데이터 저장·불러오기"에서 받은 법령 목록, 법령 즐겨찾기와 조문 즐겨찾기를 영문·숫자로 된 저장 코드로 만들거나 파일(.json)로 내려받는다. 법령 본문은 저장하지 아니한다.'], ['hang', '② 저장 코드를 붙여넣거나 저장 파일을 고르면 그 내용을 불러온다. 이때 법령 즐겨찾기는 불러온 내용으로 바뀌고, 이미 받은 법령은 지워지지 아니한다.'], ['hang', '③ 이 기기에 없는 법령은 "이 기기에 없는 법령" 목록에 나타나며, 받기 단추를 누르면 GitHub에서 받고 즐겨찾기 정보가 함께 적용된다.'], ['hang', '④ 받지 않을 법령은 ✕를 눌러 목록에서 빼며, 그 법령의 즐겨찾기 정보도 함께 지워진다.']);
+  A('이용 통계', 'Vercel 주소(law-wheat.vercel.app)로 열면 방문자 수와 방문 경로를 세는 Vercel Web Analytics가 작동한다. 쿠키를 쓰지 아니하고 개인을 식별하지 아니하며, 법령·즐겨찾기·메모 등 이 기기에 저장된 내용은 보내지 아니한다. GitHub Pages 주소와 데스크톱 파일에서는 작동하지 아니한다.');
   A('시행 예정 개정', '아직 시행되지 아니한 개정이 반영된 법령은 법령 이름 아래에 시행 예정임을 표시한다. 시험 기준일과 시행일을 비교하여 보아야 한다.');
   return { id: '__help', name: '도움말', info: '[편한 법전 사용 안내]', notice: true, units: U, addenda: [] };
 })();
