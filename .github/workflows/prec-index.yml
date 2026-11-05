@@ -33,13 +33,15 @@ jobs:
 
           NAME = r'[가-힣][가-힣ㆍ·\s]*?(?:법률|법|시행령|시행규칙|규칙)'
           TOK = re.compile(
-              r'(?P<sep>\[\d+\]|/|;)'
+              r'(?P<sep>\[\d+\]|/|;|(?<![가-힣])[가-하]\.(?:[가-하]\.)*)'
               r'|(?P<buchik>부\s*칙(?:\s*\([^()]*\))?)'
               r'|(?P<same>(?:같은\s*법|동\s*법)(?P<same_sub>\s*(?:시행령|시행규칙))?)(?=\s*(?:\([^()]*\))?\s*제\s*\d+\s*조)'
-              r'|(?P<hyun>\(\s*현행\s*(?P<hyun_name>' + NAME + r')?\s*제\s*(?P<hn>\d+)\s*조(?:\s*의\s*(?P<hs>\d+))?[^()]*\))'
+              r'|(?P<hyun>\(\s*현행\s*(?P<hyun_body>[^()]*)\))'
               r'|(?P<old>구\s*)?(?P<name>' + NAME + r')(?:\s*\([^()]*\))?(?=\s*제\s*\d+\s*조)'
               r'|제\s*(?P<n>\d+)\s*조(?:\s*의\s*(?P<s>\d+))?'
           )
+          HYUN_NAME = re.compile(r'^\s*(' + NAME + r')\s*(?=제\s*\d+\s*조)')
+          ART = re.compile(r'제\s*(\d+)\s*조(?:\s*의\s*(\d+))?')
           BAD_NAME = re.compile(r'^(법률|법|이법|본법|동법|같은법|규칙|시행령|시행규칙)$')
 
           def norm(n):
@@ -59,25 +61,43 @@ jobs:
               return out
 
           def refs_of(text):
-              """참조조문 → [(법령명, 구법여부, 조문키)]"""
+              """참조조문 → [(법령명, 구법여부, 조문키)]
+
+              구법 조문 뒤에 '(현행 제N조 참조)'가 붙으면 그 구법 조문들 대신 현행 조문으로 색인한다.
+                구 특허법(…) 제105조(현행 제142조 참조)        → 특허법 제142조
+                구 실용신안법 제5조, 제25조 제1항(현행 제4조, 제35조 참조) → 실용신안법 제4조·제35조
+                구 민사소송법 제500조(현행 민사집행법 제10조 참조) → 민사집행법 제10조
+              '(현행 삭제)'처럼 현행 조문이 없으면 구법 조문으로 남긴다.
+              """
               m = re.search(r'\n## 참조조문\n(.*?)(?:\n## |\Z)', text, re.S)
               if not m:
                   return []
               out = []
               cur = None          # (법령명, 구법여부)
+              pend = []           # 마지막 '현행' 이후 나온 조문의 out 위치 (현행 괄호가 오면 대체)
               for t in TOK.finditer(m.group(1)):
                   g = t.groupdict()
                   if g['sep'] or g['buchik']:
                       cur = None
+                      pend = []
                   elif g['same']:
                       if cur:
                           base = re.sub(r'(시행령|시행규칙)$', '', cur[0])
                           cur = (base + norm(g['same_sub'] or ''), cur[1])
                   elif g['hyun']:
-                      if cur and cur[1]:
-                          nm = norm(g['hyun_name']) if g['hyun_name'] else cur[0]
-                          nm = RENAMED.get(nm, nm)
-                          out.append((nm, False, key(g['hn'], g['hs'])))
+                      body = g['hyun_body']
+                      arts = [key(a, b) for a, b in ART.findall(body)]
+                      if not arts or not (cur or pend):
+                          continue
+                      hn = HYUN_NAME.match(body)
+                      nm = norm(hn.group(1)) if hn else (cur[0] if cur else out[pend[0]][0])
+                      if BAD_NAME.match(nm):
+                          nm = cur[0] if cur else out[pend[0]][0]
+                      nm = RENAMED.get(nm, nm)
+                      for i in pend:
+                          out[i] = None                       # 구법 조문 대신
+                      out.extend((nm, False, k) for k in arts)  # 현행 조문으로 색인
+                      pend = []
                   elif g['name']:
                       nm = norm(g['name'])
                       if BAD_NAME.match(nm) or len(nm) > 40:
@@ -87,9 +107,11 @@ jobs:
                       if nm in RENAMED:
                           nm, old = RENAMED[nm], True
                       cur = (nm, old)
+                      pend = []
                   elif g['n'] and cur:
+                      pend.append(len(out))
                       out.append((cur[0], cur[1], key(g['n'], g['s'])))
-              return out
+              return [x for x in out if x]
 
           def main():
               cats = sorted(d for d in os.listdir(SRC) if os.path.isdir(os.path.join(SRC, d)) and not d.startswith('.'))
